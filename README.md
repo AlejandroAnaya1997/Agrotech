@@ -61,7 +61,7 @@ Pasos
 Clonar el repositorio:
 
 Bash
-git clone [https://github.com/TU_USUARIO/agrotech-plant-disease.git](https://github.com/TU_USUARIO/agrotech.git)
+git clone [https://github.com/TU_USUARIO/agrotech.git](https://github.com/TU_USUARIO/agrotech.git)
 cd agrotech
 
 Instalar dependencias:
