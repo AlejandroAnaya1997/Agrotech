@@ -1,8 +1,4 @@
 streamlit==1.38.0
 tensorflow-cpu==2.18.0
-pillow>=10.0.0
-numpy>=1.24.0,<2.0.0
-#tensorflow-cpu
-#streamlit>=1.38.0
-#pillow
-#numpy
+pillow
+numpy<2.0.0

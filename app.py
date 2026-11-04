@@ -1,9 +1,16 @@
+import os
+
+# Limitar hilos de ejecución de TensorFlow para evitar OOM en la nube
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['OMP_NUM_THREADS'] = '1'
+os.environ['TF_NUM_INTRAOP_THREADS'] = '1'
+os.environ['TF_NUM_INTEROP_THREADS'] = '1'
+
 import json
+from pathlib import Path
 import numpy as np
-import streamlit as st
 from PIL import Image
-import tensorflow as tf
-from tensorflow import keras
+import streamlit as st
 
 # Configuración de página de Streamlit
 st.set_page_config(
@@ -14,14 +21,26 @@ st.set_page_config(
 
 TAMANO_IMAGEN = (224, 224)
 
+# Rutas seguras independientes del sistema operativo
+BASE_DIR = Path(__file__).resolve().parent
+MODELO_PATH = BASE_DIR / "modelo" / "modelo.keras"
+CLASES_PATH = BASE_DIR / "modelo" / "clases.json"
+
 @st.cache_resource
 def cargar_modelo_y_clases():
     """
-    Carga el modelo Keras y los nombres de las clases en memoria una sola vez
-    para evitar demoras en las iteraciones de la app.
+    Carga diferida de TensorFlow y los artefactos en memoria una sola vez
+    para optimizar la RAM y evitar errores OOM en la nube.
     """
-    modelo = keras.models.load_model("modelo/modelo.keras")
-    with open("modelo/clases.json", "r", encoding="utf-8") as f:
+    import tensorflow as tf
+
+    if not MODELO_PATH.exists():
+        raise FileNotFoundError(f"No existe el archivo de modelo en: {MODELO_PATH}")
+    if not CLASES_PATH.exists():
+        raise FileNotFoundError(f"No existe clases.json en: {CLASES_PATH}")
+
+    modelo = tf.keras.models.load_model(str(MODELO_PATH))
+    with open(CLASES_PATH, "r", encoding="utf-8") as f:
         clases = json.load(f)
     return modelo, clases
 
@@ -35,7 +54,7 @@ def preprocesar_imagen(imagen_pil):
     arreglo_batch = np.expand_dims(arreglo, axis=0)
     return arreglo_batch
 
-# Cargar artefactos
+# Cargar artefactos de forma segura
 try:
     modelo, clases = cargar_modelo_y_clases()
 except Exception as error:
@@ -90,4 +109,5 @@ if archivo_imagen is not None:
                 nombre = clases[i].replace("___", " - ").replace("_", " ")
                 prob = float(predicciones[i]) * 100
                 st.write(f"**{nombre}**: `{prob:.2f}%`")
-                st.progress(float(predicciones[i] / 100.0))
+                # st.progress espera un valor flotante entre 0.0 y 1.0
+                st.progress(float(predicciones[i]))
